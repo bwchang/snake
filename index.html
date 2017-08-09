@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style type="text/css">
+	canvas {
+		border: 1px solid white;
+		background-color: black;
+		padding: 0;
+	    margin: auto;
+	    display: block;
+	}
+	button {
+		padding: 0;
+	    margin: auto;
+	    display: block;
+	    width: 100px;
+	    height: 30px;
+	}
+	.hideColors {
+		display: none;
+	}
+</style>
+</head>
+
+<body onload="startGame()">
+<canvas id="gc", width="500", height="500"></canvas>
+<script type="text/javascript">
+
+var canvas;
+var ctx;
+var interval;
+var currentSpeed;
+
+var xVelocity; var yVelocity;
+var gridSize; var tileCount;
+var xApple; var yApple;
+var xPos; var yPos;
+var lastPos;
+
+var trail = [];
+var tail = 5;
+var score;
+var inGame;
+
+var colorSchemes = [
+	{name: "Classic", bg: "black", snake: "lime", apple: "red", snakeDark: "#168716", appleDark: "#8B0000"},
+	{name: "Trojan", bg: "#043163", snake: "LightSkyBlue", apple: "white", snakeDark: "#0092ed", appleDark: "DarkGray"},
+	{name: "Gold", bg: "#350e5b", snake: "Gold", apple: "#f61192", snakeDark: "#ceaf0a", appleDark: "#882D61"},
+	{name: "Sunset", bg: "DarkOrange", snake: "#915217", apple: "yellow", snakeDark: "#915217", appleDark: "GoldenRod"},
+	{name: "Forest", bg: "#4f2d0e", snake: "DarkGreen", apple: "Salmon", snakeDark: "DarkGreen", appleDark: "Salmon"}
+]
+var currentColor;
+
+function startGame() {
+	gameArea.start();;
+}
+
+var gameArea = {
+    start : function() {
+    	canvas = document.getElementById("gc");
+        ctx = canvas.getContext("2d");
+        resetGame();
+        currentColor = colorSchemes[0];
+        document.addEventListener("keydown", keyDown);
+    },
+    clear : function() {
+    	ctx.fillStyle = currentColor.bg;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+}
+
+function advanceGame() {
+	xPos += xVelocity;
+	yPos += yVelocity;
+	if (xPos < 0 || xPos > tileCount || yPos < 0 || yPos > tileCount) {
+		loseGame();
+		return;
+	}
+
+	ctx.fillStyle = currentColor.bg;
+	ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+	ctx.fillStyle = currentColor.snake;
+	for (var i = 0; i < trail.length; i++) {
+		ctx.fillRect(trail[i].x * gridSize, trail[i].y * gridSize, gridSize - 2, gridSize - 2);
+		if (trail[i].x == xPos && trail[i].y == yPos) {
+			loseGame();
+			return;
+		}
+	}
+
+	trail.push({x: xPos, y: yPos});
+	while (trail.length > tail) {
+		lastPos = trail.shift();
+	}
+
+	if (xApple == xPos && yApple == yPos) {
+		incrementScore();
+	}
+	ctx.fillStyle = currentColor.apple;
+	ctx.fillRect(xApple * gridSize, yApple * gridSize, gridSize - 2, gridSize - 2);
+
+	ctx.font="20px Courier";
+	ctx.fillStyle = "white";
+	ctx.fillText(score, 470, 20);
+}
+
+function keyDown(event) {
+	switch(event.keyCode) {
+		case 37:
+			xVelocity = -1;
+			yVelocity = 0;
+			break;
+		case 38:
+			xVelocity = 0;
+			yVelocity = -1;
+			break;
+		case 39:
+			xVelocity = 1;
+			yVelocity = 0;
+			break;
+		case 40:
+			xVelocity = 0;
+			yVelocity = 1;
+			break;
+		case 32:
+			if (!inGame) {
+				resetGame();
+			}
+			break;
+	}
+}
+
+function loseGame() {
+	clearInterval(interval);
+	reDraw(currentColor.snakeDark, currentColor.appleDark);
+	var colors = document.getElementById("colors");
+	colors.classList.remove("hideColors");
+	inGame = false;
+}
+
+function resetGame() {
+	currentSpeed = 10;
+	interval = setInterval(advanceGame, 1000/currentSpeed);
+	xVelocity = 1;
+	yVelocity = 0;
+	gridSize = 20;
+	tileCount = 25;
+	xApple = 15;
+	yApple = 15;
+	xPos = 12;
+	yPos = 12;
+	trail = [];
+	tail = 5;
+	score = 0;
+	colors.classList.add("hideColors");
+	inGame = true;
+}
+
+function speedUp() {
+	clearInterval(interval);
+	currentSpeed = Math.min(25, currentSpeed + 1);
+	interval = setInterval(advanceGame, 1000/currentSpeed);
+}
+
+function incrementScore() {
+	tail++;
+	score++;
+	xApple = Math.floor(Math.random() * tileCount);
+	yApple = Math.floor(Math.random() * tileCount);
+	while (contains(xApple, yApple)) {
+		xApple = Math.floor(Math.random() * tileCount);
+		yApple = Math.floor(Math.random() * tileCount);
+	}
+
+	if (score % 3 == 0) {
+		speedUp();
+	}
+}
+
+function contains(x, y) {
+	for (var i = 0; i < trail.length; i++) {
+		if (trail[i].x == x && trail[i].y == y) {
+			return true;
+		}
+	}
+	return false;
+}
+
+function switchColor(index) {
+	currentColor = colorSchemes[index];
+	reDraw(currentColor.snake, currentColor.apple);
+}
+
+function reDraw(snake, apple) {
+	gameArea.clear();
+	ctx.fillStyle = snake;
+	for (var i = 0; i < trail.length; i++) {
+		ctx.fillRect(trail[i].x * gridSize, trail[i].y * gridSize, gridSize - 2, gridSize - 2);
+	}
+	ctx.fillRect(lastPos.x * gridSize, lastPos.y * gridSize, gridSize - 2, gridSize - 2);
+	ctx.fillStyle = apple;
+	ctx.fillRect(xApple * gridSize, yApple * gridSize, gridSize - 2, gridSize - 2);
+	ctx.font="20px Courier";
+	ctx.fillStyle = "white";
+	ctx.fillText("Score: " + score, 200, 220);
+	ctx.fillText("You lost! Press [SPACE] to play again.", 30, 250);
+}
+
+</script>
+
+<div id="colors" class="hideColors">
+<button onmousedown="switchColor(0)">Classic</button>
+<button onmousedown="switchColor(1)">Trojan</button>
+<button onmousedown="switchColor(2)">Lakers</button>
+<button onmousedown="switchColor(3)">Sunset</button>
+<button onmousedown="switchColor(4)">Forest</button>
+</div>
+
+</body>
+</html>
