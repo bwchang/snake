@@ -1,25 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<style type="text/css">
-	canvas {
-		border: 1px solid white;
-		background-color: black;
-		padding: 0;
-	    margin: auto;
-	    display: block;
-	}
-	button {
-		padding: 0;
-	    margin: auto;
-	    display: block;
-	    width: 100px;
-	    height: 30px;
-	}
-	.hideColors {
-		display: none;
-	}
-</style>
+<link rel="stylesheet" type="text/css" href="css/style.css">
 </head>
 
 <body onload="startGame()">
@@ -128,6 +110,10 @@ function keyDown(event) {
 				resetGame();
 			}
 			break;
+		case 49: case 50: case 51: case 52: case 53:
+			if (!inGame) {
+				switchColor(event.keyCode - 49);
+			}
 	}
 }
 
@@ -203,19 +189,16 @@ function reDraw(snake, apple) {
 	ctx.fillRect(xApple * gridSize, yApple * gridSize, gridSize - 2, gridSize - 2);
 	ctx.font="20px Courier";
 	ctx.fillStyle = "white";
-	ctx.fillText("Score: " + score, 200, 220);
-	ctx.fillText("You lost! Press [SPACE] to play again.", 30, 250);
+	ctx.fillText("Score: " + score, 200, 120);
+	ctx.fillText("Press [SPACE] to play again.", 100, 150);
+	ctx.fillText("Choose a color scheme:", 130, 220);
+	ctx.fillText("[1]: " + colorSchemes[0].name, 180, 270);
+	ctx.fillText("[2]: " + colorSchemes[1].name, 180, 300);
+	ctx.fillText("[3]: " + colorSchemes[2].name, 180, 330);
+	ctx.fillText("[4]: " + colorSchemes[3].name, 180, 360);
+	ctx.fillText("[5]: " + colorSchemes[4].name, 180, 390);
 }
 
 </script>
-
-<div id="colors" class="hideColors">
-<button onmousedown="switchColor(0)">Classic</button>
-<button onmousedown="switchColor(1)">Trojan</button>
-<button onmousedown="switchColor(2)">Lakers</button>
-<button onmousedown="switchColor(3)">Sunset</button>
-<button onmousedown="switchColor(4)">Forest</button>
-</div>
-
 </body>
 </html>
