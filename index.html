@@ -54,7 +54,7 @@ var gameArea = {
 function advanceGame() {
 	xPos += xVelocity;
 	yPos += yVelocity;
-	if (xPos < 0 || xPos > tileCount || yPos < 0 || yPos > tileCount) {
+	if (xPos < 0 || xPos >= tileCount || yPos < 0 || yPos >= tileCount) {
 		loseGame();
 		return;
 	}
