@@ -2,6 +2,7 @@ var canvas;
 var ctx;
 var interval;
 var currentSpeed;
+var timer;
 
 var xVelocity; var yVelocity;
 var gridSize; var tileCount;
@@ -12,24 +13,12 @@ var lastPos;
 var trail = [];
 var tail = 5;
 var score;
-var inGame;
-
-function showMenu() {
-    canvas = document.getElementById("gc");
-    ctx = canvas.getContext("2d");
-	if (typeof currentColor == 'undefined') {
-    	currentColor = colorSchemes[0];
-    }
-    ctx.fillStyle = currentColor.bg;
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
-	ctx.font="20px Courier";
-	ctx.fillStyle = "white";
-	ctx.fillText("Choose Game Mode:", 150, 180);
-	ctx.fillText("[S]: Singleplayer", 150, 250);
-	ctx.fillText("[M]: Multiplayer against AI", 100, 290);
-    // startGame();
-    document.addEventListener("keydown", keyDown);
-}
+// 0 is at start menu, 1 is in game, 2 is at end game menu
+var gameStatus;
+// 0 is win, 1 is lose, 2 is both lose
+var winStatus;
+MAX_SCORE = 5;
+AI_START = 5;
 
 var gameArea = {
     start : function() {
@@ -42,24 +31,16 @@ var gameArea = {
 }
 
 function advanceGame() {
+	timer += 1;
 	xPos += xVelocity;
 	yPos += yVelocity;
 	if (xPos < 0 || xPos >= tileCount || yPos < 0 || yPos >= tileCount) {
-		loseGame();
+		winStatus = 1;
+		endGame();
 		return;
 	}
 
-	ctx.fillStyle = currentColor.bg;
-	ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-	ctx.fillStyle = currentColor.snake;
-	for (var i = 0; i < trail.length; i++) {
-		ctx.fillRect(trail[i].x * gridSize, trail[i].y * gridSize, gridSize - 2, gridSize - 2);
-		if (trail[i].x == xPos && trail[i].y == yPos) {
-			loseGame();
-			return;
-		}
-	}
+	updateCanvas();
 
 	trail.push({x: xPos, y: yPos});
 	while (trail.length > tail) {
@@ -69,12 +50,14 @@ function advanceGame() {
 	if (xApple == xPos && yApple == yPos) {
 		incrementScore();
 	}
-	ctx.fillStyle = currentColor.apple;
-	ctx.fillRect(xApple * gridSize, yApple * gridSize, gridSize - 2, gridSize - 2);
-
-	ctx.font="20px Courier";
-	ctx.fillStyle = "white";
-	ctx.fillText(score, 470, 20);
+	if (score == MAX_SCORE) {
+		winStatus = 0;
+		endGame();
+	} else {
+		ctx.fillStyle = currentColor.apple;
+		ctx.fillRect(xApple * gridSize, yApple * gridSize, gridSize - 2, gridSize - 2);
+		displayScore(score, 0);
+	}
 }
 
 function keyDown(event) {
@@ -96,17 +79,17 @@ function keyDown(event) {
 			yVelocity = 1;
 			break;
 		case 32:
-			if (!inGame) {
+			if (gameStatus != 1) {
 				showMenu();
 			}
 			break;
 		case 49: case 50: case 51: case 52: case 53:
-			if (!inGame) {
+			if (gameStatus == 2) {
 				switchColor(event.keyCode - 49);
 			}
 			break;
 		case 83:
-			if (!inGame) {
+			if (gameStatus == 0) {
 				gameArea.start();
 			}
 			break;
@@ -115,15 +98,16 @@ function keyDown(event) {
 	}
 }
 
-function loseGame() {
+function endGame() {
 	clearInterval(interval);
 	reDraw(currentColor.snakeDark, currentColor.appleDark);
-	inGame = false;
+	gameStatus = 2;
 }
 
 function resetGame() {
 	currentSpeed = 10;
 	interval = setInterval(advanceGame, 1000/currentSpeed);
+	timer = 0;
 	xVelocity = 1;
 	yVelocity = 0;
 	gridSize = 20;
@@ -135,7 +119,7 @@ function resetGame() {
 	trail = [];
 	tail = 5;
 	score = 0;
-	inGame = true;
+	gameStatus = 1;
 }
 
 function speedUp() {
